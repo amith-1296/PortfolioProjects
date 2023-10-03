@@ -1,0 +1,373 @@
+SELECT *
+INTO bikess
+FROM (
+    SELECT * FROM [dbo].[Jan]
+    UNION ALL
+    SELECT * FROM [dbo].[Feb]
+    UNION ALL
+    SELECT * FROM [dbo].[Mar]
+    UNION ALL
+    SELECT * FROM [dbo].[Apr]
+    UNION ALL
+    SELECT * FROM [dbo].[May]
+    UNION ALL
+    SELECT * FROM [dbo].[June]
+) AS CombinedData;
+
+select *
+From bikess
+
+SELECT 
+    ride_id,
+    rideable_type,
+    started_at,
+    ended_at,
+    ROUND(DATEDIFF(SECOND, started_at, ended_at) / 60.0, 1) AS ride_length_minutes,
+    DATEPART(WEEKDAY, started_at) AS day_of_week,
+    MONTH(started_at) AS month,
+    start_station_name,
+    start_station_id,
+    end_station_name,
+    end_station_id,
+    start_lat,
+    start_lng,
+    end_lat,
+    end_lng,
+    member_casual,
+	Day
+FROM [dbo].[bikess]
+
+-- Average ride length for members by days
+select Day, member_casual,  AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Where member_casual in ('member', 'casual')
+Group by Day, member_casual
+order by avg_ride_length DESC
+
+
+-- Average ride length for casual riders by days
+select Day, AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Where member_casual = 'casual'
+Group by Day
+order by avg_ride_length DESC
+
+
+
+
+ALTER TABLE [dbo].[bikess]
+ADD ride_length_minutes FLOAT;
+
+UPDATE [dbo].[bikess]
+SET ride_length_minutes = ROUND(DATEDIFF(SECOND, started_at, ended_at) / 60.0, 1);
+
+-- Average ride length by member and casual
+select member_casual, AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Group by member_casual
+
+
+-- maximum and minimum average ride lengths
+select MAX(ride_length_minutes), MIN(ride_length_minutes)
+From [dbo].[bikess]
+
+select * 
+From [dbo].[bikess]
+
+ALTER TABLE [dbo].[bikess]
+ADD month_name VARCHAR(20);
+
+UPDATE [dbo].[bikess]
+SET month_name = DATENAME(MONTH, started_at);
+
+-- count of members and casual riders per month
+Select month_name, member_casual, COUNT(member_casual) AS num_of_riders
+From [dbo].[bikess]
+Group by month_name,member_casual
+Order by num_of_riders DESC
+
+-- count of casual and members
+Select member_casual, COUNT(member_casual) AS num_of_riders
+From [dbo].[bikess]
+Group by member_casual
+-- deleted rows where ride_length is less than or equal to zero
+DELETE FROM [dbo].[bikess]
+WHERE ride_length_minutes <= 0;
+
+-- deleted rows that is lasting over 24 hours
+
+DELETE FROM [dbo].[bikess]
+WHERE ride_length_minutes > 1440;
+
+select member_casual, MAX(ride_length_minutes) AS maximum_ride_length, MIN(ride_length_minutes) AS minimum_ride_length, AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Group by member_casual
+
+--AVG ride_length of members and casual
+select member_casual, AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Group by member_casual 
+
+
+--Avg ride length by day of member riders
+select Day, member_casual,  AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Where member_casual IN ('member', 'casual')
+Group by Day, member_casual
+Order by avg_ride_length DESC
+
+
+--Avg ride length by day of Casual riders
+select Day, AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Where member_casual = 'casual'
+Group by Day
+Order by avg_ride_length DESC
+
+-- Average ride length of members by month
+select month_name, AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Where member_casual = 'member'
+Group by month_name
+Order by avg_ride_length DESC
+
+--Average ride length of casual riders by month
+select month_name, AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Where member_casual = 'casual'
+Group by month_name
+Order by avg_ride_length DESC
+
+-- Total rides by members based on Day
+select Day, COUNT(*) AS rides_taken_by_members
+From [dbo].[bikess]
+Where member_casual = 'member'
+Group by Day
+Order by rides_taken_by_members DESC
+
+-- Total rides by casual riders based on Day
+select Day, COUNT(*) AS rides_taken_by_members
+From [dbo].[bikess]
+Where member_casual = 'casual'
+Group by Day
+Order by rides_taken_by_members DESC
+
+-- count of rides taken based on month by members riders
+select month_name, COUNT(*) AS rides_taken_by_members
+From [dbo].[bikess]
+Where member_casual = 'member'
+Group by month_name
+Order by rides_taken_by_members DESC
+
+-- count of rides taken based on month by casual riders
+select month_name, COUNT(*) AS rides_taken_by_casual
+From [dbo].[bikess]
+Where member_casual = 'casual'
+Group by month_name
+Order by rides_taken_by_casual DESC
+
+
+-- Avg minutes of different types of bikes by members
+select rideable_type, AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Where member_casual = 'member'
+Group by rideable_type
+Order by avg_ride_length DESC
+
+
+-- Avg minutes of different types of bikes by casual riders
+select rideable_type, AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Where member_casual = 'casual'
+Group by rideable_type
+Order by avg_ride_length DESC
+
+
+
+
+-- Average ride length by rideable type
+select rideable_type, AVG(ride_length_minutes) AS avg_ride_length
+From [dbo].[bikess]
+Group by rideable_type
+Order by avg_ride_length DESC
+
+
+select rideable_type,member_casual, COUNT(*) AS num_of_riders
+From [dbo].[bikess]
+Group by rideable_type, member_casual
+order by num_of_riders DESC
+
+
+
+-- rides taken by hour by members
+SELECT 
+    DATEPART(HOUR, started_at) AS hour_of_day,
+    COUNT(*) AS bike_usage_count,
+    Day, month_name
+FROM [dbo].[bikess]
+WHERE member_casual = 'member'
+    AND ride_length_minutes > 0
+    AND ride_length_minutes < 1440
+GROUP BY Day, month_name,  DATEPART(HOUR, started_at)
+ORDER BY bike_usage_count DESC;
+
+-- rides taken by casual riders
+SELECT 
+    DATEPART(HOUR, started_at) AS hour_of_day,
+    COUNT(*) AS bike_usage_count,
+    Day, month_name, member_casual
+FROM [dbo].[bikess]
+WHERE member_casual in ('member', 'casual')
+    AND ride_length_minutes > 0
+    AND ride_length_minutes < 1440
+GROUP BY Day, month_name, member_casual,  DATEPART(HOUR, started_at)
+ORDER BY bike_usage_count DESC;
+
+-- Favourite start station of members
+select start_station_name, COUNT(*) AS num_of_mem_rides
+From [dbo].[bikess]
+Where member_casual = 'member'
+Group by start_station_name
+Order by num_of_mem_rides DESC
+
+-- Favourite start station of casual riders
+select start_station_name, COUNT(*) AS num_of_cas_rides
+From [dbo].[bikess]
+Where member_casual = 'casual'
+Group by start_station_name
+Order by num_of_cas_rides DESC
+
+-- favourite ending station for members
+select end_station_name, COUNT(*) AS num_of_mem_rides
+From [dbo].[bikess]
+Where member_casual = 'member'
+Group by end_station_name
+Order by num_of_mem_rides DESC
+
+-- Favourite ending station of casual riders
+select end_station_name, COUNT(*) AS num_of_cas_rides
+From [dbo].[bikess]
+Where member_casual = 'casual'
+Group by end_station_name
+Order by num_of_cas_rides DESC
+
+
+
+-- members favourite  top 10 stations
+WITH StationVisits AS (
+    SELECT
+        start_station_name AS station_name,
+        COUNT(*) AS visit_count
+    FROM
+        [dbo].[bikess]
+    WHERE
+        member_casual = 'member'
+    GROUP BY
+        start_station_name
+
+    UNION ALL
+
+    SELECT 
+        end_station_name AS station_name,
+        COUNT(*) AS visit_count
+    FROM
+        [dbo].[bikess]
+    WHERE
+        member_casual = 'member'
+    GROUP BY
+        end_station_name
+)
+
+SELECT TOP 10
+    station_name,
+    SUM(visit_count) AS total_visit_count
+FROM
+    StationVisits
+GROUP BY
+    station_name
+ORDER BY
+    total_visit_count DESC;
+
+-- casual riders favourite top 10 stations
+WITH StationVisits AS (
+    SELECT
+        start_station_name AS station_name,
+        COUNT(*) AS visit_count
+    FROM
+        [dbo].[bikess]
+    WHERE
+        member_casual = 'casual'
+    GROUP BY
+        start_station_name
+
+    UNION ALL
+
+    SELECT
+        end_station_name AS station_name,
+        COUNT(*) AS visit_count
+    FROM
+        [dbo].[bikess]
+    WHERE
+        member_casual = 'casual'
+    GROUP BY
+        end_station_name
+)
+
+SELECT TOP 10
+    station_name,
+    SUM(visit_count) AS total_visit_count
+FROM
+    StationVisits
+GROUP BY
+    station_name
+ORDER BY
+    total_visit_count DESC, station_name
+
+-- Top 10 routes for members
+WITH RouteVisits AS (
+    SELECT
+        start_station_name,
+        end_station_name,
+        COUNT(*) AS visit_count
+    FROM
+        [dbo].[bikess]
+    WHERE
+        member_casual = 'member'
+    GROUP BY
+        start_station_name, end_station_name
+)
+
+SELECT TOP 10
+    start_station_name AS start_station,
+    end_station_name AS end_station,
+    visit_count
+FROM
+    RouteVisits
+ORDER BY
+    visit_count DESC
+
+
+-- Top 10 routes for casual riders
+WITH RouteVisits AS (
+    SELECT
+        start_station_name,
+        end_station_name,
+		start_lat, start_lng, end_lat, end_lng ,
+        COUNT(*) AS visit_count
+    FROM
+        [dbo].[bikess]
+    WHERE
+        member_casual = 'casual'
+    GROUP BY
+        start_station_name, end_station_name,start_lat, start_lng, end_lat, end_lng
+)
+
+SELECT TOP 10
+    start_station_name AS start_station,
+    end_station_name AS end_station,
+	start_lat, start_lng, end_lat, end_lng,
+    visit_count
+FROM
+    RouteVisits
+ORDER BY
+    visit_count DESC
